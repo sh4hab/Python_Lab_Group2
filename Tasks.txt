@@ -1,0 +1,36 @@
+#! .... #!
+
+PythonLab : LAB_3
+
+GIT :
+1.1 : Shahab Shafaei
+1.2 : Shahab Shafaei
+1.3 : #
+BONOUS 1 : Shahab Shafaei
+1.4 : #
+1.5 :
+BONOUS 2 :
+
+PYTHON FUNDAMENTALS :
+2.1 : Shahab Shafaei
+2.2 : Shahab Shafaei
+2.3 : Amin Sarzaeem
+2.4 :
+2.5 :
+
+PYTHON IN USE :
+3.1 : Shahab Shafaei
+3.2 : Amin Sarzaeem
+3.3 : Amin Sarzaeem
+3.4 :
+3.5 :
+3.6 :
+
+PYTHON ALGORITHM :
+
+4.1 : Shahab Shafaei
+BONOUS 1 : Shahab Shafaei	
+4.2 :
+4.3 :
+4.4 :
+BONOUS 2 : Amin Sarzaeem
