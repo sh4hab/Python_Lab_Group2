@@ -1,0 +1,28 @@
+---// Introducing Virtual Enviroments //---
+
+
+Virtual enviroment is a very usefull tool for python developers specially who are developing a large project .
+For example , we are working on a website and there are special conditions that we have to use 2 defferent versions of Django .
+We can't import both of them in our project , so we have to make a virtual enviroment and proceed our projects there .Then we can add and import
+different versions of libraries or other tools there .
+
+I have used both linux Terminal and windows cmd to make a virtual enviroment .
+
+1. Linux :
+We can use anaconda virtual enviroment toolkit or python virtual enviroment .I have used anaconda .
+after installing anaconda , for creating a virtual enviroment we can use this comand :
+"conda create -n yourvirtualenvname python=x.x anaconda "
+
+which "yourvirtualenvname" is your virtual enviroment name and python=x.x is the version of your python .
+after creating the venv , you have to activate it .For that we can use :
+
+"source activate yourenvname"
+and your venv will be active .
+
+To see the venvs you can use :
+
+"conda info -e"
+
+2. Windows
+
+2.1 :Open windows cmd .
