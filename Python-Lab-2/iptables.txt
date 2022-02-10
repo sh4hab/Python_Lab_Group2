@@ -1,0 +1,231 @@
+\\python lab iptable
+
+PING google.com (142.250.185.46) 56(84) bytes of data.
+64 bytes from mct01s19-in-f14.1e100.net (142.250.185.46): icmp_seq=1 ttl=106 time=89.9 ms
+64 bytes from mct01s19-in-f14.1e100.net (142.250.185.46): icmp_seq=2 ttl=106 time=114 ms
+
+--- google.com ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 89.937/102.159/114.382/12.226 ms
+
+
+\\1.
+➜  ~ sudo iptables -A OUTPUT -s 0/0 -d 142.250.185.46 -j DROP
+[sudo] password for mamin: 
+
+\\2. we can see that ping google is not allowed.
+➜  ~ ping google.com                                         
+PING google.com (142.250.185.46) 56(84) bytes of data.
+ping: sendmsg: Operation not permitted
+ping: sendmsg: Operation not permitted
+ping: sendmsg: Operation not permitted
+
+--- google.com ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2030ms
+
+
+
+\\3. we can see list of chain and rules for input forward and output packets:
+➜  ~ sudo iptables -L
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+DROP       all  --  anywhere             mct01s19-in-f14.1e100.net 
+
+
+\\4.delete all rules:
+➜  ~ sudo iptables -F
+
+
+\\5. we can see that ping request is sent but no response has been received.
+➜  ~ sudo iptables -A INPUT -s  142.250.185.46 -j DROP
+
+
+\\6.
+➜  ~ ping google.com                                  
+PING google.com (142.250.185.46) 56(84) bytes of data.
+
+--- google.com ping statistics ---
+2 packets transmitted, 0 received, 100% packet loss, time 1031ms
+
+
+\\7.
+➜  ~ sudo iptables -L                                 
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+DROP       all  --  mct01s19-in-f14.1e100.net  anywhere            
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination  
+
+
+
+\\8. we can set sorce ip subnet mask using following command:
+       
+➜  ~ sudo iptables -A INPUT -s  192.168.56.0/24 -j DROP
+
+\\ blocking following subnet, pinging is not available because it contains system ip for host only network.
+➜  ~ sudo iptables -A INPUT -s  192.168.0.0/16 -j DROP
+
+➜  ~ ping google.com
+ping: unknown host google.com
+
+
+\\ 9. first let see different system interfaces:
+
+➜  ~ ifconfig
+enp0s3    Link encap:Ethernet  HWaddr 08:00:27:ff:a7:b1  
+          inet addr:10.0.2.15  Bcast:10.0.2.255  Mask:255.255.255.0
+          inet6 addr: fe80::2514:6c69:dbe6:9015/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:22939 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:11793 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:25518535 (25.5 MB)  TX bytes:2326836 (2.3 MB)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:1302 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:1302 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:242398 (242.3 KB)  TX bytes:242398 (242.3 KB)
+
+\\ the following rule accept all input packets with all protocols through loop back interface:                                          
+➜  ~ sudo iptables -A INPUT -i lo -p all -j ACCEPT
+
+\\ the following rule accept all input packets from local host with all protocols through ethernet0 interface: 
+➜  ~ sudo iptables -A INPUT -s localhost -p all -i eth0 -j DROP
+
+\\the following rule accept all input tcp packets from local host through ethernet0 interface: 
+➜  ~ sudo iptables -A INPUT -s 0/0 -d 192.168.1.1 -p TCP -i eth0 -j ACCEPT
+    
+\\the following rule accept all forwarding packets from everywhere to system http server with all protocols through ethernet0 interface: 
+➜  ~ sudo iptables -A FORWARD -s 0/0 -i eth0 -d 192.168.1.58 -o eth1 -p TCP --sport 1024:65535 --dport 80 -j ACCEPT
+
+➜  ~ sudo iptables -L
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+ACCEPT     all  --  anywhere             anywhere            
+DROP       all  --  localhost            anywhere            
+ACCEPT     tcp  --  anywhere             wireless.router.cpe 
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+ACCEPT     tcp  --  anywhere             192.168.1.58         tcp spts:1024:65535 dpt:http
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+➜  ~ sudo iptables -F
+
+
+\\10. ssh port number is 22. so we first drop all input ssh ips and then accept those we want:
+➜  ~ sudo iptables -A INPUT -p TCP -s 0/0 --dport 22 -j DROP 
+➜  ~ sudo iptables -A INPUT -p TCP -s 192.168.56.1 --dport 22 -j ACCEPT
+➜  ~ sudo iptables -L                                                
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+DROP       tcp  --  anywhere             anywhere             tcp dpt:ssh
+ACCEPT     tcp  --  192.168.56.1         anywhere             tcp dpt:ssh
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+➜  ~ sudo iptables -F
+
+
+\\11.http port is 80 and https port is 443 so we should block input output on this ports.
+➜  ~ sudo iptables -A INPUT -p TCP --dport 80 -j DROP
+➜  ~ sudo iptables -A INPUT -p TCP --dport 443 -j DROP
+➜  ~ sudo iptables -L                                 
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+DROP       tcp  --  anywhere             anywhere             tcp dpt:http
+DROP       tcp  --  anywhere             anywhere             tcp dpt:https
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination   
+
+
+\\12. set ping rate:(icmp protocol):
+➜  ~ sudo iptables -A INPUT -p icmp -m icmp --icmp-type address-mask-request -j DROP
+➜  ~ sudo iptables -A INPUT -p icmp -m icmp --icmp-type timestamp-request -j DROP
+➜  ~ sudo iptables -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 1/minute -j ACCEPT
+➜  ~ sudo iptables -L                                                          
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+DROP       icmp --  anywhere             anywhere             icmp address-mask-request
+DROP       icmp --  anywhere             anywhere             icmp timestamp-request
+ACCEPT     icmp --  anywhere             anywhere             icmp echo-request limit: avg 1/min burst 5
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+➜  ~ ping google.com
+PING google.com (142.250.186.110) 56(84) bytes of data.
+64 bytes from fra24s06-in-f14.1e100.net (142.250.186.110): icmp_seq=1 ttl=109 time=219 ms
+64 bytes from fra24s06-in-f14.1e100.net (142.250.186.110): icmp_seq=2 ttl=109 time=238 ms
+64 bytes from fra24s06-in-f14.1e100.net (142.250.186.110): icmp_seq=3 ttl=109 time=156 ms
+64 bytes from fra24s06-in-f14.1e100.net (142.250.186.110): icmp_seq=4 ttl=109 time=188 ms
+
+--- google.com ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 156.893/200.641/238.034/30.851 ms
+➜  ~ sudo iptables -F
+
+\\13. accept input ssh and blocking out put ssh:
+➜  ~ sudo iptables -A INPUT -p TCP --dport 22 -j ACCEPT                     
+➜  ~ sudo iptables -A OUTPUT -p TCP --dport 22 -j DROP
+➜  ~ sudo iptables -L                                  
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:ssh
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+DROP       tcp  --  anywhere             anywhere             tcp dpt:ssh
+
+
+\\14.block input tcp, we cant acces to web pages.then blocking udp:
+➜  ~ sudo iptables -A INPUT -p TCP -j DROP   
+➜  ~ sudo iptables -A INPUT -p UDP -j DROP
+➜  ~ sudo iptables -L                     
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+DROP       tcp  --  anywhere             anywhere            
+DROP       udp  --  anywhere             anywhere            
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+➜  ~ ping google.com 
+ping: unknown host google.com
+
+
+\\15.by controling input and output packets, source destinayon ips we can limit the access. also we can track each connection.
+
+
+
+
