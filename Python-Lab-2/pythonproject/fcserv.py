@@ -5,11 +5,11 @@ import cv2
 #cascPath = sys.argv[2]
 
 # Create the haar cascade
-faceCascade = cv2.CascadeClassifier("code.xml")
+faceCascade = cv2.CascadeClassifier("haarcascade_frontface_default.xml")
 
 
 # Read the image
-image = cv2.imread("volume\\help.jpg")
+image = cv2.imread("volume/Capture.png")
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 
@@ -18,8 +18,8 @@ faces = faceCascade.detectMultiScale(
     gray,
     scaleFactor=1.1,
     minNeighbors=5,
-    minSize=(30, 30),
-    flags = cv2.cv.CV_HAAR_SCALE_IMAGE
+    minSize=(30, 30)
+    #flags = cv2..CV_HAAR_SCALE_IMAGE
 )
 
 
